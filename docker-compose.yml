@@ -1,0 +1,11 @@
+
+version: '3.4'
+
+services:
+  attacker:
+    container_name: 'Attacker'
+    build: ./attacker
+
+  target:
+    container_name: 'Target'
+    build: ./target
