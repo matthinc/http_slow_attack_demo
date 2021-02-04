@@ -55,6 +55,9 @@ func requestWorker(connection net.Conn) {
 	} else if strings.TrimSpace(method) == "GET" &&  strings.TrimSpace(resource) == "/kitten.webp" {
 		fmt.Println("-> Send kitten")
 		sendKitten(connection)
+	} else {
+		fmt.Println("-> Send 404")
+		send404(connection)
 	}
 
 	connection.Close()
@@ -76,4 +79,12 @@ func sendKitten(c net.Conn) {
 	c.Write([]byte("Content-Length: " + strconv.Itoa(len(kitten)) + "\r\n"))
 	c.Write([]byte("\r\n"))
 	c.Write(kitten)
+}
+
+func send404(c net.Conn) {
+	c.Write([]byte("HTTP/1.1 404 Not found\r\n"))
+	c.Write([]byte("Content-Type: text/html\r\n"))
+	c.Write([]byte("Content-Length: 13\r\n"))
+	c.Write([]byte("\r\n"))
+	c.Write([]byte("404 Not Found"))
 }
