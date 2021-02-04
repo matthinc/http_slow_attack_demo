@@ -55,6 +55,9 @@ func requestWorker(connection net.Conn) {
 	} else if strings.TrimSpace(method) == "GET" &&  strings.TrimSpace(resource) == "/kitten.webp" {
 		fmt.Println("-> Send kitten")
 		sendKitten(connection)
+	} else if strings.TrimSpace(method) == "GET" &&  strings.TrimSpace(resource) == "/ccwhp.jpg" {
+		fmt.Println("-> Send ccwhp")
+		sendCCWHP(connection)
 	} else {
 		fmt.Println("-> Send 404")
 		send404(connection)
@@ -64,11 +67,15 @@ func requestWorker(connection net.Conn) {
 }
 
 func sendIndex(c net.Conn) {
+	content := "<body><h1>Test site</h1><br />" +
+		"<br /><img width=\"600\" src=\"ccwhp.jpg\"><br /><br />" +
+	    "<a href=\"/kitten.webp\">another kitten</a></body>"
+	
 	c.Write([]byte("HTTP/1.1 200 OK\r\n"))
 	c.Write([]byte("Content-Type: text/html\r\n"))
-	c.Write([]byte("Content-Length: 57\r\n"))
+	c.Write([]byte("Content-Length: " + strconv.Itoa(len(content)) + "\r\n"))
 	c.Write([]byte("\r\n"))
-	c.Write([]byte("<h1>Test-Site</h1><br><img width=\"600\" src=\"kitten.webp\">"))
+	c.Write([]byte(content))
 }
 
 func sendKitten(c net.Conn) {
@@ -76,6 +83,16 @@ func sendKitten(c net.Conn) {
 	
 	c.Write([]byte("HTTP/1.1 200 OK\r\n"))
 	c.Write([]byte("Content-Type: image/webp\r\n"))
+	c.Write([]byte("Content-Length: " + strconv.Itoa(len(kitten)) + "\r\n"))
+	c.Write([]byte("\r\n"))
+	c.Write(kitten)
+}
+
+func sendCCWHP(c net.Conn) {
+	kitten, _ := ioutil.ReadFile("cute_chick_with_hairy_pussy.jpg")
+	
+	c.Write([]byte("HTTP/1.1 200 OK\r\n"))
+	c.Write([]byte("Content-Type: image/jpg\r\n"))
 	c.Write([]byte("Content-Length: " + strconv.Itoa(len(kitten)) + "\r\n"))
 	c.Write([]byte("\r\n"))
 	c.Write(kitten)
