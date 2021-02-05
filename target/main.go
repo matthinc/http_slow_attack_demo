@@ -7,6 +7,12 @@ import (
 	"strings"
 	"io/ioutil"
 	"strconv"
+	"mime"
+	"path/filepath"
+)
+
+var (
+	numConnections = 0
 )
 
 func main() {
@@ -19,6 +25,8 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		} else {
+			numConnections++
+			fmt.Println("Connections: " + strconv.Itoa(numConnections))
 			go requestWorker(connection)
 		}
 	}
@@ -35,9 +43,7 @@ func requestWorker(connection net.Conn) {
 	// Read newline before headers
 	reader.ReadLine()
 
-	fmt.Println("======================")
 	fmt.Println(method + " " + resource + " " + http)
-	fmt.Println("=== Headers: ")
 
 	// Read additional data (headers, post body...)
 	for {
@@ -45,63 +51,39 @@ func requestWorker(connection net.Conn) {
 		if err != nil || len(d) == 0 {
 			break
 		}
-		fmt.Println(string(d))
 	}
 
-	// Routing
-	if strings.TrimSpace(method) == "GET" &&  strings.TrimSpace(resource) == "/" {
-		fmt.Println("-> Send index")
-		sendIndex(connection)
-	} else if strings.TrimSpace(method) == "GET" &&  strings.TrimSpace(resource) == "/kitten.webp" {
-		fmt.Println("-> Send kitten")
-		sendKitten(connection)
-	} else if strings.TrimSpace(method) == "GET" &&  strings.TrimSpace(resource) == "/ccwhp.jpg" {
-		fmt.Println("-> Send ccwhp")
-		sendCCWHP(connection)
-	} else {
-		fmt.Println("-> Send 404")
-		send404(connection)
+	method = strings.TrimSpace(method)
+	resource = strings.TrimSpace(resource)
+
+	if resource == "/" {
+		resource = "index.html"
 	}
 
+	if method == "GET" {
+		sendFile(connection, resource)
+	}
+	
 	connection.Close()
+	numConnections--
 }
 
-func sendIndex(c net.Conn) {
-	content := "<body><h1>Test site</h1><br />" +
-		"<br /><img width=\"600\" src=\"ccwhp.jpg\"><br /><br />" +
-	    "<a href=\"/kitten.webp\">another kitten</a></body>"
-	
-	c.Write([]byte("HTTP/1.1 200 OK\r\n"))
-	c.Write([]byte("Content-Type: text/html\r\n"))
-	c.Write([]byte("Content-Length: " + strconv.Itoa(len(content)) + "\r\n"))
-	c.Write([]byte("\r\n"))
-	c.Write([]byte(content))
+func sendFile(c net.Conn, filename string) {
+	file, err := ioutil.ReadFile("./www/" + filename)
+
+	if err == nil {
+		mimetype := mime.TypeByExtension(filepath.Ext(filename))
+		c.Write([]byte("HTTP/1.1 200 OK\r\n"))
+		c.Write([]byte("Content-Type: " + mimetype + "\r\n"))
+		c.Write([]byte("Content-Length: " + strconv.Itoa(len(file)) + "\r\n"))
+		c.Write([]byte("\r\n"))
+		c.Write(file)
+	} else {
+		c.Write([]byte("HTTP/1.1 404 Not found\r\n"))
+		c.Write([]byte("Content-Type: text/html\r\n"))
+		c.Write([]byte("Content-Length: 13\r\n"))
+		c.Write([]byte("\r\n"))
+		c.Write([]byte("404 Not Found"))
+	}
 }
 
-func sendKitten(c net.Conn) {
-	kitten, _ := ioutil.ReadFile("kitten.webp")
-	
-	c.Write([]byte("HTTP/1.1 200 OK\r\n"))
-	c.Write([]byte("Content-Type: image/webp\r\n"))
-	c.Write([]byte("Content-Length: " + strconv.Itoa(len(kitten)) + "\r\n"))
-	c.Write([]byte("\r\n"))
-	c.Write(kitten)
-}
-
-func sendCCWHP(c net.Conn) {
-	kitten, _ := ioutil.ReadFile("cute_chick_with_hairy_pussy.jpg")
-	
-	c.Write([]byte("HTTP/1.1 200 OK\r\n"))
-	c.Write([]byte("Content-Type: image/jpg\r\n"))
-	c.Write([]byte("Content-Length: " + strconv.Itoa(len(kitten)) + "\r\n"))
-	c.Write([]byte("\r\n"))
-	c.Write(kitten)
-}
-
-func send404(c net.Conn) {
-	c.Write([]byte("HTTP/1.1 404 Not found\r\n"))
-	c.Write([]byte("Content-Type: text/html\r\n"))
-	c.Write([]byte("Content-Length: 13\r\n"))
-	c.Write([]byte("\r\n"))
-	c.Write([]byte("404 Not Found"))
-}
