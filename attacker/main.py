@@ -1,3 +1,18 @@
 #!/usr/bin/env python3
 
-print("Hello, World! From the attacker.")
+import socket
+
+
+TCP_IP = "target"
+TCP_PORT = 7000
+BUFFER_SIZE = 1024
+HEADER = "POST /echo HTTP/1.1\r\nHost: Attacker\r\nContent-Type: text/plain\r\nContent-Length: 32\r\n\r\n"
+MESSAGE = "Hello, World! From the attacker."
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((TCP_IP, TCP_PORT))
+s.send((HEADER + MESSAGE).encode("utf-8"))
+data = s.recv(BUFFER_SIZE)
+s.close()
+
+print("received data:" + str(data))
