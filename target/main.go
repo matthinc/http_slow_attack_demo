@@ -11,6 +11,11 @@ import (
 	"path/filepath"
 )
 
+type headerField struct {
+	key string
+	value string
+}
+
 var (
 	numConnections = 0
 )
@@ -46,10 +51,22 @@ func requestWorker(connection net.Conn) {
 	fmt.Println(method + " " + resource + " " + http)
 
 	// Read additional data (headers, post body...)
+
+	contentLength := 0
+	contentType := "text/plain"
+	
 	for {
 		d, _, err := reader.ReadLine()
 		if err != nil || len(d) == 0 {
 			break
+		}
+		
+		headerLine := parseHeaderLine(string(d))
+
+		if headerLine.key == "content-type" {
+			contentType = headerLine.value;
+		} else if headerLine.key == "content-length" {
+			contentLength, _ = strconv.Atoi(headerLine.value)
 		}
 	}
 
@@ -62,6 +79,11 @@ func requestWorker(connection net.Conn) {
 
 	if method == "GET" {
 		sendFile(connection, resource)
+	}
+
+	if method == "POST" && resource == "/echo" {
+		data := receivePostData(reader, contentLength)
+		sendEchoReply(connection, contentType, data)
 	}
 	
 	connection.Close()
@@ -87,3 +109,33 @@ func sendFile(c net.Conn, filename string) {
 	}
 }
 
+func receivePostData(reader *bufio.Reader, length int) []byte {
+	buff := make([]byte, length)
+
+	for i := 0; i < length; i++ {
+		b, err := reader.ReadByte()
+		if err != nil {
+			fmt.Println(err)
+		}
+		buff[i] = b
+	}
+
+	return buff
+}
+
+func sendEchoReply(c net.Conn, contentType string, data []byte) {
+	c.Write([]byte("HTTP/1.1 200 OK\r\n"))
+	c.Write([]byte("Content-Type: " + contentType + "\r\n"))
+	c.Write([]byte("Content-Length: " + strconv.Itoa(len(data)) + "\r\n"))
+	c.Write([]byte("\r\n"))
+	c.Write(data)
+}
+
+func parseHeaderLine(header string) *headerField {
+	split := strings.Split(header, ": ")
+	
+	return &headerField{
+		key: strings.ToLower(split[0]),
+		value: split[1],
+	}
+}
