@@ -5,7 +5,11 @@ services:
   attacker:
     container_name: 'Attacker'
     build: ./attacker
+    depends_on:
+      - target
 
   target:
     container_name: 'Target'
     build: ./target
+    ports:
+      - 7000:7000
