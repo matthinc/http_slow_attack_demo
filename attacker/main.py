@@ -12,7 +12,10 @@ MESSAGE = "Hello, World! From the attacker."
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((TCP_IP, TCP_PORT))
 s.send((HEADER + MESSAGE).encode("utf-8"))
-data = s.recv(BUFFER_SIZE)
+i = 1
+while i > 0:
+    data = s.recv(BUFFER_SIZE)
+    i -= 1
 s.close()
 
 print("received data:" + str(data))
