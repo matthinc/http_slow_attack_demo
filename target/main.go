@@ -20,11 +20,19 @@ var (
 	numConnections = 0
 )
 
+const (
+	maxNumberConnections = 2
+)
+
 func main() {
 	sock, _ := net.Listen("tcp", "0.0.0.0:7000")
 	defer sock.Close()
 
 	for {
+
+		// Wait for new free connections
+		for numConnections >= maxNumberConnections {}
+		
 		connection, err := sock.Accept()
 		
 		if err != nil {
@@ -112,13 +120,16 @@ func sendFile(c net.Conn, filename string) {
 func receivePostData(reader *bufio.Reader, length int) []byte {
 	buff := make([]byte, length)
 
-	for i := 0; i < length; i++ {
+	for i := 0; i < length;  i++ {
 		b, err := reader.ReadByte()
+		
 		if err != nil {
 			fmt.Println(err)
 		}
 		buff[i] = b
 	}
+
+	fmt.Println("POST read done.")
 
 	return buff
 }
