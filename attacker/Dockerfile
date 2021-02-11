@@ -1,8 +1,11 @@
 
-FROM python:3.8-buster
+FROM python:2.7.9-wheezy
 
 WORKDIR /opt
 
-COPY ./main.py .
+COPY ./Torshammer1.0/torshammer.py .
 
-CMD ["python3", "/opt/main.py"] 
+RUN pip install PySocks
+RUN pip install Terminal
+
+CMD ["python2", "/opt/torshammer.py", "-t localhost", "-p 7000", "-r 30"] 
