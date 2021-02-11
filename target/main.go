@@ -12,6 +12,7 @@ import (
 	"time"
 	"bytes"
 	"sync"
+	"os"
 )
 
 type headerField struct {
@@ -28,14 +29,17 @@ type connectionData struct {
 var (
 	connections = make([]connectionData, 0)
 	connectionManagementMutex sync.Mutex
+
+	paramU = getParam("PARAM_U")
+	paramL = getParam("PARAM_L")
+	paramT = getParam("PARAM_T")
+	maxNumberConnections = getParam("MAX_CONNECTIONS")
 )
 
-const (
-	maxNumberConnections = 30
-	paramU = 20
-	paramL = 10
-	paramT = 5
-)
+func getParam(env string) int {
+	param, _ := strconv.Atoi(os.Getenv(env))
+	return param
+}
 
 func main() {
 	sock, _ := net.Listen("tcp", "0.0.0.0:7000")
@@ -106,7 +110,7 @@ func dosProtector() {
 				if connection.addr == maxIP {
 					connectionDuration := time.Now().Unix() - connection.tst
 
-					if connectionDuration > paramT {
+					if connectionDuration > int64(paramT) {
 						closeConnection(connection)
 					}
 				}

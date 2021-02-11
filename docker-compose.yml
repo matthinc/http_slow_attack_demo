@@ -13,3 +13,19 @@ services:
     build: ./target
     ports:
       - 7000:7000
+    environment:
+      MAX_CONNECTIONS: 30
+      PARAM_U: 20
+      PARAM_L: 15
+      PARAM_T: 5
+  vulnerable_target:
+    container_name: 'Vulnearable-Target'
+    build: ./target
+    ports:
+      - 7001:7000
+    environment:
+      MAX_CONNECTIONS: 30
+      PARAM_U: 100
+      PARAM_L: 100
+      PARAM_T: 5
+
